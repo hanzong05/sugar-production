@@ -39,6 +39,10 @@ jobs:
       - run: flutter pub get
       - run: flutter clean
       - run: flutter build ios --no-codesign
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: build/ios/iphoneos/Runner.app
 
   build_apk:
     name: Build Flutter (Android)
@@ -56,3 +60,7 @@ jobs:
       - run: flutter pub get
       - run: flutter clean
       - run: flutter build apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-release
+          path: build/app/outputs/flutter-apk/app-release.apk
