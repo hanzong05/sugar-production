@@ -38,7 +38,7 @@ jobs:
           channel: "stable"
       - run: flutter pub get
       - run: flutter clean
-      - run: flutter build ios
+      - run: flutter build ios --no-codesign
 
   build_apk:
     name: Build Flutter (Android)
