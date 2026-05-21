@@ -311,6 +311,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('CPR'),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+      ),
+
       backgroundColor: colors.background,
       body: _ctrl.isLoading
           ? const Center(

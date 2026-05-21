@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sugar_production/core/theme/app_theme.dart';
 import 'package:sugar_production/core/services/auth_service.dart';
+import 'package:sugar_production/core/services/update_service.dart';
 import '../controllers/profile_controller.dart';
 import '../widgets/profile_widgets.dart';
 import 'package:sugar_production/core/theme/theme_extensions.dart';
+import 'dart:async';
 
 class ProfilepageScreen extends StatefulWidget {
   const ProfilepageScreen({super.key});
@@ -118,7 +120,47 @@ class _ProfilepageScreenState extends State<ProfilepageScreen> {
                         const SizedBox(height: 20),
 
                         // ── Sign Out ──────────────────────────────
-                        const SignOutButton(),
+                        // const SignOutButton(),
+                        const SizedBox(height: 20),
+
+                        const ProfileSectionLabel('APP INFO'),
+                        const SizedBox(height: 10),
+
+                        AppVersionCard(
+                          currentVersion: _ctrl.appVersion,
+                          latestVersion: _ctrl.latestVersion.isEmpty
+                              ? _ctrl.appVersion
+                              : _ctrl.latestVersion,
+                          hasUpdate: _ctrl.hasUpdate,
+                          checkingUpdate:
+                              _ctrl.checkingUpdate, // pass loading state
+                          onCheckUpdate: () =>
+                              _ctrl.checkForUpdate(), // ← add this
+                          onUpdate: () async {
+                            final progressController =
+                                StreamController<(double, int, int)>();
+
+                            DownloadProgressDialog.show(
+                              context,
+                              stream: progressController.stream,
+                            );
+
+                            await updateVersion(
+                              _ctrl.apkUrl,
+                              onProgress: (progress, received, total) {
+                                if (!progressController.isClosed) {
+                                  progressController.add((
+                                    progress,
+                                    received,
+                                    total,
+                                  ));
+                                }
+                              },
+                            );
+
+                            progressController.close();
+                          },
+                        ),
                       ],
                     ),
                   ),

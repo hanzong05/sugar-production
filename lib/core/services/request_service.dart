@@ -91,7 +91,31 @@ class RequestService {
           p.$colPlname as pl_name
         FROM $requestTable r
         LEFT JOIN $planterTable p ON r.$colReqplcode = p.$colPlcode
-        WHERE r.$colReqplcode = ?
+           WHERE r.$colReqplcode = ? AND r.$colforcpr != '1'
+        ORDER BY r.$colReqdtr DESC
+        ''',
+        [planterCode],
+      );
+    } catch (e) {
+      print('Error getting requests by planter with details: $e');
+      rethrow;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getReqByPlanterWithDetailsForCpr(
+    String planterCode,
+  ) async {
+    try {
+      final db = await DBHelper.db;
+      return await db.rawQuery(
+        '''
+        SELECT
+          r.*,
+          p.$colPlcode as pl_code,
+          p.$colPlname as pl_name
+        FROM $requestTable r
+        LEFT JOIN $planterTable p ON r.$colReqplcode = p.$colPlcode
+        WHERE r.$colReqplcode = ? AND r.$colforcpr != '0'
         ORDER BY r.$colReqdtr DESC
         ''',
         [planterCode],
@@ -148,6 +172,18 @@ class RequestService {
   ) async {
     try {
       final result = await getReqByPlanterWithDetails(planterCode);
+      return result.map((row) => _appendStatus(row)).toList();
+    } catch (e) {
+      print('Error getting requests by planter with details: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRequestsByPlanterWithDetailsForCpr(
+    String planterCode,
+  ) async {
+    try {
+      final result = await getReqByPlanterWithDetailsForCpr(planterCode);
       return result.map((row) => _appendStatus(row)).toList();
     } catch (e) {
       print('Error getting requests by planter with details: $e');

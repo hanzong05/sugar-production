@@ -23,12 +23,9 @@ class _FarmManagementAppState extends State<FarmManagementApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     themeNotifier.addListener(_onThemeChanged);
-    _hideSystemUI();
   }
 
-  void _onThemeChanged() {
-    setState(() {});
-  }
+  void _onThemeChanged() => setState(() {});
 
   @override
   void dispose() {
@@ -39,10 +36,7 @@ class _FarmManagementAppState extends State<FarmManagementApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (state == AppLifecycleState.paused) {
-      await _auth.updateLastActive();
-    } else if (state == AppLifecycleState.resumed) {
-      _hideSystemUI();
+    if (state == AppLifecycleState.resumed) {
       await _auth.restoreSession();
 
       if (!_auth.isLoggedIn) {
@@ -62,12 +56,8 @@ class _FarmManagementAppState extends State<FarmManagementApp>
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.light, // or themeNotifier.themeMode
-      home: _auth.isLoggedIn ? AppLayout() : const LoginScreen(),
+      themeMode: ThemeMode.light,
+      home: _auth.isLoggedIn ? const AppLayout() : const LoginScreen(),
     );
   }
-}
-
-void _hideSystemUI() {
-  WidgetsFlutterBinding.ensureInitialized();
 }

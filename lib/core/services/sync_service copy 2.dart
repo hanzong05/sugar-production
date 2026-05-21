@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/http.dart' show Response;
 import 'package:sugar_production/models/modcoord.dart';
 import 'package:sugar_production/core/constants/api_constants.dart';
-import 'package:sugar_production/core/services/cpr_service.dart';
+import 'package:sugar_production/core/services/planter_service.dart';
 import 'package:sugar_production/core/db.dart';
 import 'package:sugar_production/models/modsynctoserver.dart';
 import 'package:sugar_production/models/modplanter.dart';
@@ -513,7 +513,6 @@ class SyncService {
           }
           await batch.commit(noResult: true);
         });
-
         for (var item in cprjson.data) {
           await download_cpr_Image(
             int.parse(item.id ?? '') ?? 0,
@@ -528,9 +527,6 @@ class SyncService {
         }
         _updateProgress(1.0, 'Sync completed!');
         DataNotifier.instance.notify();
-
-        await DBHelper.updateSync(usernameid!);
-
         return true;
       } else if (response.statusCode == 401) {
         _updateProgress(0, 'Authentication failed');
@@ -544,6 +540,704 @@ class SyncService {
       return false;
     }
   }
+
+  // Future<bool?> savesync(
+  //   context,
+  //   conntype,
+  //   List<Map<String, dynamic>> cprlist,
+  //   List<Map<String, dynamic>> lplist,
+  // ) async {
+  //   ApiConstants.conntype = conntype;
+  //   final apiEndpoint = '${ApiConstants.baseUrl}/${ApiConstants.syncUpdate}';
+
+  //   _updateProgress(0.05, 'Preparing data...');
+
+  //   List<dynamic> jsonCprList = cprlist.map((row) {
+  //     String cleanDate = (row['delivery_date'] ?? '')
+  //         .toString()
+  //         .replaceFirst('T', ' ')
+  //         .split('.')[0];
+
+  //     return ({
+  //       'id': row['cpr_id'] ?? 0,
+  //       'ref_no': row['cpr_refno'] ?? 0,
+  //       'request_id': row['request_id'] ?? 0,
+  //       'lo_id_source': row['location_id'] ?? 0,
+  //       'variety_id': row['variety_id'] ?? 0,
+  //       'pl_id': row['planter_id'],
+  //       'cutter_id': row['cutter_id'] ?? 0,
+  //       'qty': row['qty'],
+  //       'delivery_date': cleanDate,
+  //       'fr_id': row['rcvfr_id'] ?? 0,
+  //       'printcount': row['print_count'] ?? 0,
+  //       'pl_id_source': row['source_planter'] ?? 0,
+  //       'received_by': row['recieved_by'],
+  //       'series': row['series'],
+  //       'traflag': row['traflag'],
+  //       'hauling_paid': row['hauling_paid'] ?? 0,
+  //       'hauling_amount': row['hauling_amount'] ?? 0,
+  //       'cuttingmode': row['cuttingmode'] ?? 0,
+  //       'cuttingdate': (row['cuttingdate'] ?? '')
+  //           .toString()
+  //           .replaceFirst('T', ' ')
+  //           .split('.')[0],
+  //     });
+  //   }).toList();
+
+  //   List<dynamic> jsonLpList = lplist
+  //       .where((row) {
+  //         final lpTraflag = (row['lp_traflag'] ?? 'E').toString();
+  //         final apTraflag = (row['ap_traflag'] ?? 'E').toString();
+  //         return !(lpTraflag == 'S' && apTraflag == 'S');
+  //       })
+  //       .map((row) {
+  //         String rawApTraflag = row['ap_traflag'] ?? 'E';
+  //         String rawLpTraflag = row['lp_traflag'] ?? 'E';
+
+  //         String apTraflag = rawApTraflag == 'A' ? 'S' : rawApTraflag;
+  //         String lpTraflag = rawLpTraflag == 'A' ? 'S' : rawLpTraflag;
+
+  //         String cleanlpDate = rawLpTraflag != 'E'
+  //             ? (row['landprep_date'] ?? '')
+  //                   .toString()
+  //                   .replaceFirst('T', ' ')
+  //                   .split('.')[0]
+  //             : '';
+  //         String cleanapDate = rawApTraflag != 'E'
+  //             ? (row['actualplanted_date'] ?? '')
+  //                   .toString()
+  //                   .replaceFirst('T', ' ')
+  //                   .split('.')[0]
+  //             : '';
+
+  //         return ({
+  //           'id': row['id'] ?? 0,
+  //           'request_id': row['request_id'] ?? 0,
+  //           // 'land_prep': cleanLp,
+  //           'landprep_date': cleanlpDate,
+  //           // 'actual_planted': cleanAp,
+  //           'actualplanted_date': cleanapDate,
+  //           'ap_traflag': apTraflag,
+  //           'lp_traflag': lpTraflag,
+  //         });
+  //       })
+  //       .toList();
+
+  //   final uri = Uri.parse(apiEndpoint);
+  //   final request = http.MultipartRequest('POST', uri);
+
+  //   request.headers[HttpHeaders.authorizationHeader] = globals.globalhttpauth
+  //       .toString();
+
+  //   request.fields['usernameid'] = globals.globalusernameid.toString();
+  //   request.fields['cprinfo'] = jsonEncode(jsonCprList);
+  //   request.fields['splotpictures'] = jsonEncode(jsonLpList);
+
+  //   for (final row in cprlist) {
+  //     final id = (row['cpr_id'] ?? '').toString();
+
+  //     await _addImageFilePart(request, row['signature'], 'sig_$id');
+  //     await _addImageFilePart(request, row['image'], 'pic_$id');
+  //     await _addImageFilePart(request, row['sp_delivered'], 'spd_$id');
+  //   }
+
+  //   final uploadableLp = lplist.where((row) {
+  //     final lp = (row['lp_traflag'] ?? 'E').toString();
+  //     final ap = (row['ap_traflag'] ?? 'E').toString();
+  //     return !(lp == 'S' && ap == 'S');
+  //   }).toList();
+
+  //   for (final row in uploadableLp) {
+  //     final id = (row['id'] ?? '').toString();
+  //     final rawLp = (row['lp_traflag'] ?? 'E').toString();
+  //     final rawAp = (row['ap_traflag'] ?? 'E').toString();
+
+  //     if (rawLp == 'A')
+  //       await _addImageFilePart(request, row['land_prep'], 'lp_$id');
+  //     if (rawAp == 'A')
+  //       await _addImageFilePart(request, row['actual_planted'], 'ap_$id');
+  //   }
+
+  //   Planterjson planterjson = Planterjson(data: []);
+  //   PlanterSourcejson plantersourcejson = PlanterSourcejson(data: []);
+  //   Cutterjson cuttersjson = Cutterjson(data: []);
+  //   SrcLocationjson locationsjson = SrcLocationjson(data: []);
+  //   Varietyjson varietyjson = Varietyjson(data: []);
+  //   Requestjson requestsjson = Requestjson(data: []);
+  //   Coordinatorjson coordinatorjson = Coordinatorjson(data: []);
+  //   LotPictureJson lotpicturesjson = LotPictureJson(data: []);
+  //   PermissionsJson permissionsJson = PermissionsJson(data: []);
+
+  //   try {
+  //     _updateProgress(0.10, 'Uploading to server...');
+  //     print('=== SAVESYNC DEBUG START ===');
+  //     print('URL: $apiEndpoint');
+  //     print('AUTH: ${globals.globalhttpauth}');
+  //     print('usernameid: ${globals.globalusernameid}');
+  //     print('cprinfo count: ${jsonCprList.length}');
+  //     print('splotpictures count: ${jsonLpList.length}');
+  //     print('cprinfo json: ${jsonEncode(jsonCprList)}');
+  //     print('splotpictures json: ${jsonEncode(jsonLpList)}');
+
+  //     for (final f in request.files) {
+  //       print(
+  //         'FILE FIELD: ${f.field} | NAME: ${f.filename} | LENGTH: ${f.length}',
+  //       );
+  //     }
+
+  //     print('FIELDS: ${request.fields}');
+  //     print('=== SAVESYNC DEBUG END ===');
+  //     final streamed = await request.send().timeout(
+  //       const Duration(seconds: 30),
+  //     );
+  //     final response = await http.Response.fromStream(streamed);
+
+  //     print('STATUS: ${response.statusCode}');
+  //     print('BODY: ${response.body}');
+
+  //     if (response.statusCode == 200) {
+  //       _updateProgress(0.15, 'Updating local records...');
+
+  //       final db = await DBHelper.db;
+  //       final batch = db.batch();
+
+  //       // Bulk-update traflag for already-synced records (single queries, no loop)
+  //       await db.update(
+  //         cprtable,
+  //         {colcprtraflag: 'S'},
+  //         where: '$colcprtraflag = ? OR $colcprtraflag = ?',
+  //         whereArgs: ['A', 'U'],
+  //       );
+  //       await db.update(
+  //         lotPicturesTable,
+  //         {collptraflag: 'S'},
+  //         where: '$collptraflag = ?',
+  //         whereArgs: ['A'],
+  //       );
+  //       await db.update(
+  //         lotPicturesTable,
+  //         {colaptraflag: 'S'},
+  //         where: '$colaptraflag = ?',
+  //         whereArgs: ['A'],
+  //       );
+
+  //       _updateProgress(0.20, 'Processing planters...');
+  //       planterjson = plantersFromJson(response.body);
+  //       for (var i = 0; i < planterjson.data.length; i++) {
+  //         int? plid = int.parse(planterjson.data[i].plid);
+  //         String? plcode = planterjson.data[i].plcode;
+  //         String? plname = planterjson.data[i].plname;
+  //         String? traflag = planterjson.data[i].traflag;
+  //         var x = Planter(plid, plcode, plname, traflag);
+  //         batch.insert(
+  //           planterTable,
+  //           x.toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace,
+  //         );
+  //       }
+
+  //       _updateProgress(0.20, 'Processing planter sources...');
+  //       plantersourcejson = PlanterSourceFromJson(response.body);
+  //       for (var i = 0; i < plantersourcejson.data.length; i++) {
+  //         int? plsourceId = int.parse(plantersourcejson.data[i].plsource_id);
+  //         String? plsourceCode = plantersourcejson.data[i].plsource_code;
+  //         String? plsourceName = plantersourcejson.data[i].plsource_name;
+  //         String? traflag = plantersourcejson.data[i].traflag;
+  //         var y = SourcePlanter(
+  //           plsourceId,
+  //           plsourceCode,
+  //           plsourceName,
+  //           traflag,
+  //         );
+  //         if (traflag == 'I') {
+  //           batch.insert(
+  //             srcplanterTable,
+  //             y.toMap(),
+  //             conflictAlgorithm: ConflictAlgorithm.replace,
+  //           );
+  //         } else if (traflag == 'U') {
+  //           batch.update(
+  //             srcplanterTable,
+  //             y.toMap(),
+  //             where: '$colPlsrcid = ?',
+  //             whereArgs: [plsourceId],
+  //           );
+  //         } else if (traflag == 'D') {
+  //           batch.delete(
+  //             srcplanterTable,
+  //             where: '$colPlsrcid = ?',
+  //             whereArgs: [plsourceId],
+  //           );
+  //         }
+  //       }
+
+  //       _updateProgress(0.30, 'Processing requests...');
+  //       requestsjson = RequestFromJson(response.body);
+  //       for (var i = 0; i < requestsjson.data.length; i++) {
+  //         int? requestId = int.parse(requestsjson.data[i].request_id);
+  //         int? requestNo = int.parse(requestsjson.data[i].request_no);
+  //         String? requestDate = requestsjson.data[i].request_date;
+  //         String? plCode = requestsjson.data[i].pl_code;
+  //         String? plName = requestsjson.data[i].pl_name;
+  //         String? location = requestsjson.data[i].location;
+  //         String? area = requestsjson.data[i].area;
+  //         int? qty = double.parse(requestsjson.data[i].qty).toInt();
+  //         int? remainingQty = double.parse(
+  //           requestsjson.data[i].remaining_qty,
+  //         ).toInt();
+  //         int? deliveredQty = double.parse(
+  //           requestsjson.data[i].delivered_qty,
+  //         ).toInt();
+  //         int? plid = int.parse(requestsjson.data[i].plid);
+  //         String traflag = requestsjson.data[i].traflag;
+  //         var xx = Requests(
+  //           requestId,
+  //           requestNo,
+  //           requestDate,
+  //           plCode,
+  //           plName,
+  //           location,
+  //           area,
+  //           qty,
+  //           remainingQty,
+  //           deliveredQty,
+  //           plid,
+  //           traflag,
+  //         );
+  //         if (traflag == 'I') {
+  //           batch.insert(
+  //             requestTable,
+  //             xx.toMap(),
+  //             conflictAlgorithm: ConflictAlgorithm.replace,
+  //           );
+  //         } else if (traflag == 'U') {
+  //           batch.update(
+  //             requestTable,
+  //             xx.toMap(),
+  //             where: '$colReqid = ?',
+  //             whereArgs: [requestId],
+  //           );
+  //         } else if (traflag == 'D') {
+  //           batch.delete(
+  //             requestTable,
+  //             where: '$colReqid = ?',
+  //             whereArgs: [requestId],
+  //           );
+  //         }
+  //       }
+
+  //       _updateProgress(0.40, 'Processing coordinators...');
+  //       coordinatorjson = CoordinatorFromJson(response.body);
+  //       for (var i = 0; i < coordinatorjson.data.length; i++) {
+  //         int? id = int.parse(coordinatorjson.data[i].fr_id);
+  //         String? frCode = coordinatorjson.data[i].fr_code;
+  //         String? frName = coordinatorjson.data[i].fr_name;
+  //         String? traflag = coordinatorjson.data[i].traflag;
+  //         var yy = Coordinators(id, frCode, frName, traflag);
+  //         if (traflag == 'I') {
+  //           batch.insert(
+  //             frTable,
+  //             yy.toMap(),
+  //             conflictAlgorithm: ConflictAlgorithm.replace,
+  //           );
+  //         } else if (traflag == 'U') {
+  //           batch.update(
+  //             frTable,
+  //             yy.toMap(),
+  //             where: '$colfrid = ?',
+  //             whereArgs: [id],
+  //           );
+  //         } else if (traflag == 'D') {
+  //           batch.delete(frTable, where: '$colfrid = ?', whereArgs: [id]);
+  //         }
+  //       }
+
+  //       _updateProgress(0.50, 'Processing cutters...');
+  //       cuttersjson = CutterFromJson(response.body);
+  //       for (var i = 0; i < cuttersjson.data.length; i++) {
+  //         int? id = int.parse(cuttersjson.data[i].id);
+  //         String? description = cuttersjson.data[i].description;
+  //         String? traflag = cuttersjson.data[i].traflag;
+  //         var yy = Cutters(id, description, traflag);
+  //         if (traflag == 'I') {
+  //           batch.insert(
+  //             cuttertable,
+  //             yy.toMap(),
+  //             conflictAlgorithm: ConflictAlgorithm.replace,
+  //           );
+  //         } else if (traflag == 'U') {
+  //           batch.update(
+  //             cuttertable,
+  //             yy.toMap(),
+  //             where: '$colctrid = ?',
+  //             whereArgs: [id],
+  //           );
+  //         } else if (traflag == 'D') {
+  //           batch.delete(cuttertable, where: '$colctrid = ?', whereArgs: [id]);
+  //         }
+  //       }
+
+  //       _updateProgress(0.70, 'Processing varieties...');
+  //       varietyjson = VarietyFromJson(response.body);
+  //       for (var i = 0; i < varietyjson.data.length; i++) {
+  //         int? id = int.parse(varietyjson.data[i].id);
+  //         String? description = varietyjson.data[i].description;
+  //         String? traflag = varietyjson.data[i].traflag;
+  //         var yy = Variety(id, description, traflag);
+  //         if (traflag == 'I') {
+  //           batch.insert(
+  //             varietytable,
+  //             yy.toMap(),
+  //             conflictAlgorithm: ConflictAlgorithm.replace,
+  //           );
+  //         } else if (traflag == 'U') {
+  //           batch.update(
+  //             varietytable,
+  //             yy.toMap(),
+  //             where: '$colvarid = ?',
+  //             whereArgs: [id],
+  //           );
+  //         } else if (traflag == 'D') {
+  //           batch.delete(varietytable, where: '$colvarid = ?', whereArgs: [id]);
+  //         }
+  //       }
+
+  //       _updateProgress(0.80, 'Processing locations...');
+  //       locationsjson = SrcLocationFromJson(response.body);
+  //       for (var i = 0; i < locationsjson.data.length; i++) {
+  //         int? id = int.parse(locationsjson.data[i].id);
+  //         String? location = locationsjson.data[i].location;
+  //         String? code = locationsjson.data[i].code;
+  //         String? traflag = locationsjson.data[i].traflag;
+  //         var yy = Location(id, location, code, traflag);
+  //         if (traflag == 'I') {
+  //           batch.insert(
+  //             locationtable,
+  //             yy.toMap(),
+  //             conflictAlgorithm: ConflictAlgorithm.replace,
+  //           );
+  //         } else if (traflag == 'U') {
+  //           batch.update(
+  //             locationtable,
+  //             yy.toMap(),
+  //             where: '$collocid = ?',
+  //             whereArgs: [id],
+  //           );
+  //         } else if (traflag == 'D') {
+  //           batch.delete(
+  //             locationtable,
+  //             where: '$collocid = ?',
+  //             whereArgs: [id],
+  //           );
+  //         }
+  //       }
+
+  //       _updateProgress(0.90, 'Processing permissions...');
+  //       permissionsJson = PermissionsFromJson(response.body);
+  //       for (var i = 0; i < permissionsJson.data.length; i++) {
+  //         int? moduleid = int.parse(permissionsJson.data[i].moduleid);
+  //         int? hasaccess = int.parse(permissionsJson.data[i].hasaccess);
+  //         var xx = UserPermissions(moduleid, hasaccess);
+  //         batch.insert(
+  //           userpermissionstable,
+  //           xx.toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace,
+  //         );
+  //       }
+
+  //       _updateProgress(0.90, 'Processing Lot pics...');
+  //       lotpicturesjson = LotPictureFromJson(response.body);
+  //       for (var i = 0; i < lotpicturesjson.data.length; i++) {
+  //         int? collpid = int.parse(lotpicturesjson.data[i].collpid);
+  //         String? collpreqid = lotpicturesjson.data[i].collpreqid;
+  //         String? collandprep = lotpicturesjson.data[i].collandprep;
+  //         String? collandprepdate = lotpicturesjson.data[i].collandprepdate;
+  //         String? collandactualdate = lotpicturesjson.data[i].collandactualdate;
+  //         String? collandactual = lotpicturesjson.data[i].collandactual;
+  //         String? collptraflag = lotpicturesjson.data[i].collptraflag;
+  //         String? colaptraflag = lotpicturesjson.data[i].colaptraflag;
+  //         // String? collandtraflag = lotpicturesjson.data[i].collandtraflag;
+  //         var yy = LotPicture(
+  //           collpid,
+  //           collpreqid,
+  //           collandprep,
+  //           collandprepdate,
+  //           collandactual,
+  //           collandactualdate,
+  //           collptraflag,
+  //           colaptraflag,
+  //         );
+  //         if (collptraflag == 'I' || colaptraflag == 'I') {
+  //           batch.insert(
+  //             lotPicturesTable,
+  //             yy.toMap(),
+  //             conflictAlgorithm: ConflictAlgorithm.replace,
+  //           );
+  //         } else if (collptraflag == 'U' || colaptraflag == 'U') {
+  //           batch.update(
+  //             lotPicturesTable,
+  //             yy.toMap(),
+  //             where: '$collpid = ?',
+  //             whereArgs: [collpid],
+  //           );
+  //         } else if (collptraflag == 'D' || colaptraflag == 'D') {
+  //           batch.delete(
+  //             lotPicturesTable,
+  //             where: '$collpid = ?',
+  //             whereArgs: [collpid],
+  //           );
+  //         }
+  //       }
+
+  //       await batch.commit(noResult: true);
+  //       DataNotifier.instance.notify();
+
+  //       _updateProgress(1.0, 'Sync completed!');
+  //       return true;
+  //     } else if (response.statusCode == 401) {
+  //       _updateProgress(0, 'Authentication failed');
+  //       return false;
+  //     } else {
+  //       _updateProgress(0, 'Server error: ${response.body}');
+  //       print('${response.statusCode}');
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     _updateProgress(0, _friendlyError(e));
+  //     return false;
+  //   }
+  // }
+
+  // Future<bool?> savesync(
+  //   context,
+  //   conntype,
+  //   List<Map<String, dynamic>> cprlist,
+  //   List<Map<String, dynamic>> lplist,
+  // ) async {
+  //   ApiConstants.conntype = conntype;
+  //   final apiEndpoint = '${ApiConstants.baseUrl}/${ApiConstants.syncUpdate}';
+  //   final uri = Uri.parse(apiEndpoint);
+  //   final db = await DBHelper.db;
+
+  //   try {
+  //     // --- PHASE 1: SYNC CPR RECORDS (Individual Uploads) ---
+  //     for (int i = 0; i < cprlist.length; i++) {
+  //       var row = cprlist[i];
+  //       final cprId = (row['cpr_id'] ?? '').toString();
+
+  //       _updateProgress(
+  //         0.10 + (i / cprlist.length * 0.40),
+  //         'Uploading CPR $cprId...',
+  //       );
+
+  //       final request = http.MultipartRequest('POST', uri);
+  //       request.headers[HttpHeaders.authorizationHeader] = globals
+  //           .globalhttpauth
+  //           .toString();
+  //       request.fields['usernameid'] = globals.globalusernameid.toString();
+
+  //       // Single record mapping
+  //       String cleanDate = (row['delivery_date'] ?? '')
+  //           .toString()
+  //           .replaceFirst('T', ' ')
+  //           .split('.')[0];
+  //       request.fields['cprinfo'] = jsonEncode([
+  //         {
+  //           'id': row['cpr_id'] ?? 0,
+  //           'ref_no': row['cpr_refno'] ?? 0,
+  //           'request_id': row['request_id'] ?? 0,
+  //           'lo_id_source': row['location_id'] ?? 0,
+  //           'variety_id': row['variety_id'] ?? 0,
+  //           'pl_id': row['planter_id'],
+  //           'cutter_id': row['cutter_id'] ?? 0,
+  //           'qty': row['qty'],
+  //           'delivery_date': cleanDate,
+  //           'fr_id': row['rcvfr_id'] ?? 0,
+  //           'printcount': row['print_count'] ?? 0,
+  //           'pl_id_source': row['source_planter'] ?? 0,
+  //           'received_by': row['recieved_by'],
+  //           'series': row['series'],
+  //           'traflag': row['traflag'],
+  //           'hauling_paid': row['hauling_paid'] ?? 0,
+  //           'hauling_amount': row['hauling_amount'] ?? 0,
+  //           'cuttingmode': row['cuttingmode'] ?? 0,
+  //           'cuttingdate': row['cuttingdate'] ?? '0',
+  //         },
+  //       ]);
+
+  //       await _addImageFilePart(request, row['signature'], 'sig_$cprId');
+  //       await _addImageFilePart(request, row['image'], 'pic_$cprId');
+  //       await _addImageFilePart(request, row['sp_delivered'], 'spd_$cprId');
+  //       print('Total Request Size: ${(request.fields)} ');
+  //       final response = await http.Response.fromStream(
+  //         await request.send().timeout(const Duration(minutes: 2)),
+  //       );
+
+  //       print(response.body);
+  //       if (response.statusCode == 200) {
+  //         await db.update(
+  //           cprtable,
+  //           {colcprtraflag: 'S'},
+  //           where: 'cpr_id = ?',
+  //           whereArgs: [row['cpr_id']],
+  //         );
+  //       } else {
+  //         throw 'Failed to upload CPR $cprId (Status: ${response.statusCode})';
+  //       }
+  //     }
+
+  //     // --- PHASE 2: SYNC LOT PICTURES (Individual Uploads) ---
+  //     final uploadableLp = lplist
+  //         .where(
+  //           (row) =>
+  //               !((row['lp_traflag'] ?? 'E') == 'S' &&
+  //                   (row['ap_traflag'] ?? 'E') == 'S'),
+  //         )
+  //         .toList();
+
+  //     for (int i = 0; i < uploadableLp.length; i++) {
+  //       var row = uploadableLp[i];
+  //       final lpId = (row['id'] ?? '').toString();
+  //       _updateProgress(
+  //         0.50 + (i / uploadableLp.length * 0.20),
+  //         'Uploading Lot Pic $lpId...',
+  //       );
+
+  //       final request = http.MultipartRequest('POST', uri);
+  //       request.headers[HttpHeaders.authorizationHeader] = globals
+  //           .globalhttpauth
+  //           .toString();
+  //       request.fields['usernameid'] = globals.globalusernameid.toString();
+
+  //       request.fields['splotpictures'] = jsonEncode([
+  //         {
+  //           'id': row['id'] ?? 0,
+  //           'request_id': row['request_id'] ?? 0,
+  //           'landprep_date': row['lp_traflag'] != 'E'
+  //               ? (row['landprep_date'] ?? '')
+  //                     .toString()
+  //                     .replaceFirst('T', ' ')
+  //                     .split('.')[0]
+  //               : '',
+  //           'actualplanted_date': row['ap_traflag'] != 'E'
+  //               ? (row['actualplanted_date'] ?? '')
+  //                     .toString()
+  //                     .replaceFirst('T', ' ')
+  //                     .split('.')[0]
+  //               : '',
+  //           'ap_traflag': row['ap_traflag'] == 'A' ? 'S' : row['ap_traflag'],
+  //           'lp_traflag': row['lp_traflag'] == 'A' ? 'S' : row['lp_traflag'],
+  //         },
+  //       ]);
+
+  //       if (row['lp_traflag'] == 'A')
+  //         await _addImageFilePart(request, row['land_prep'], 'lp_$lpId');
+  //       if (row['ap_traflag'] == 'A')
+  //         await _addImageFilePart(request, row['actual_planted'], 'ap_$lpId');
+
+  //       final response = await http.Response.fromStream(
+  //         await request.send().timeout(const Duration(minutes: 2)),
+  //       );
+
+  //       if (response.statusCode == 200) {
+  //         await db.update(
+  //           lotPicturesTable,
+  //           {collptraflag: 'S', colaptraflag: 'S'},
+  //           where: 'id = ?',
+  //           whereArgs: [row['id']],
+  //         );
+  //       }
+  //     }
+
+  //     // --- PHASE 3: MASTER DATA DOWNLOAD & BATCH PROCESSING ---
+  //     _updateProgress(0.80, 'Downloading updated master data...');
+  //     final finalReq = await http.post(
+  //       uri,
+  //       body: {'usernameid': globals.globalusernameid.toString()},
+  //       headers: {
+  //         HttpHeaders.authorizationHeader: globals.globalhttpauth.toString(),
+  //       },
+  //     );
+
+  //     if (finalReq.statusCode == 200) {
+  //       final batch = db.batch();
+  //       final body = finalReq.body;
+
+  //       _updateProgress(0.85, 'Processing Master Data...');
+
+  //       // Batch process each category
+  //       final planters = plantersFromJson(body);
+  //       for (var p in planters.data)
+  //         batch.insert(
+  //           planterTable,
+  //           Planter(int.parse(p.plid), p.plcode, p.plname, p.traflag).toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace,
+  //         );
+
+  //       final requests = RequestFromJson(body);
+  //       for (var r in requests.data)
+  //         batch.insert(
+  //           requestTable,
+  //           Requests(
+  //             int.parse(r.request_id),
+  //             int.parse(r.request_no),
+  //             r.request_date,
+  //             r.pl_code,
+  //             r.pl_name,
+  //             r.location,
+  //             r.area,
+  //             double.parse(r.qty).toInt(),
+  //             double.parse(r.remaining_qty).toInt(),
+  //             double.parse(r.delivered_qty).toInt(),
+  //             int.parse(r.plid),
+  //             r.traflag,
+  //           ).toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace,
+  //         );
+
+  //       final coordinators = CoordinatorFromJson(body);
+  //       for (var c in coordinators.data)
+  //         batch.insert(
+  //           frTable,
+  //           Coordinators(
+  //             int.parse(c.fr_id),
+  //             c.fr_code,
+  //             c.fr_name,
+  //             c.traflag,
+  //           ).toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace,
+  //         );
+
+  //       final varieties = VarietyFromJson(body);
+  //       for (var v in varieties.data)
+  //         batch.insert(
+  //           varietytable,
+  //           Variety(int.parse(v.id), v.description, v.traflag).toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace,
+  //         );
+
+  //       final perms = PermissionsFromJson(body);
+  //       for (var p in perms.data)
+  //         batch.insert(
+  //           userpermissionstable,
+  //           UserPermissions(
+  //             int.parse(p.moduleid),
+  //             int.parse(p.hasaccess),
+  //           ).toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace,
+  //         );
+
+  //       await batch.commit(noResult: true);
+  //       DataNotifier.instance.notify();
+  //       _updateProgress(1.0, 'Sync Completed');
+  //       return true;
+  //     }
+  //     return false;
+  //   } catch (e) {
+  //     _updateProgress(0, 'Sync Failed: $e');
+  //     return false;
+  //   }
+  // }
 
   Future<bool?> savesync(
     context,
@@ -882,12 +1576,9 @@ class SyncService {
   }
 
   Future<bool> checkiffirst(context, conntype) async {
-    final id = globals.globalusernameid;
+    final planters = await PlanterServices.getPlanters();
 
-    final result = await DBHelper.getisSyncedByid(id!);
-    final syncedvalue = result?[issynced] as int? ?? 0;
-
-    if (syncedvalue == 0) {
+    if (planters.isEmpty) {
       print('1st');
       return await savesyncfirst(context, conntype) ?? false;
     } else {

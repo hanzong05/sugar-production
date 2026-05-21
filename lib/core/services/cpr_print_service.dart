@@ -1,9 +1,6 @@
-import 'package:sunmi_printer_plus/enums.dart';
 import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
-import 'package:sunmi_printer_plus/sunmi_style.dart';
 import 'package:sugar_production/models/modcpr.dart';
 import 'package:sugar_production/core/services/cpr_service.dart';
-import 'package:sunmi_printer_plus/column_maker.dart';
 
 class Printcprinfoprint {
   void printingcount(
@@ -14,7 +11,6 @@ class Printcprinfoprint {
   ) async {
     for (int i = 0; i < count; i++) {
       await CprService.incrementPrintCount(cprid);
-      // await CprService.incrementSeries(cprid);
       final updatedcpr = await CprService.getcprsById(cprid);
       final updatedCounter = updatedcpr?.colcprcounter ?? 0;
       await _printinfo(cprinfo, cprid, updatedCounter, details);
@@ -25,20 +21,14 @@ class Printcprinfoprint {
   }
 
   Future<void> _printLine(String text) async {
-    const int maxChars = 30; // same as column width
-
-    String truncated = text.length > maxChars
-        ? text.substring(0, maxChars) // cut extra characters
+    const int maxChars = 30;
+    final String truncated = text.length > maxChars
+        ? text.substring(0, maxChars)
         : text;
 
-    await SunmiPrinter.printRow(
-      cols: [
-        ColumnMaker(
-          text: truncated,
-          width: maxChars,
-          align: SunmiPrintAlign.LEFT,
-        ),
-      ],
+    await SunmiPrinter.printText(
+      truncated,
+      style: SunmiTextStyle(align: SunmiPrintAlign.LEFT),
     );
   }
 
@@ -96,33 +86,45 @@ class Printcprinfoprint {
         : cprinfo.colcprhlngstat == 2
         ? 'No'
         : 'N/A';
+    final String cutterpaid = cprinfo.colcprcmstat == 1
+        ? 'Yes'
+        : cprinfo.colcprcmstat == 2
+        ? 'No'
+        : 'N/A';
+    final String sackspaid = cprinfo.colcprscksstat == 1
+        ? 'Yes'
+        : cprinfo.colcprscksstat == 2
+        ? 'No'
+        : 'N/A';
+    final String otherspaid = cprinfo.colcprothersstat == 1
+        ? 'Yes'
+        : cprinfo.colcprothersstat == 2
+        ? 'No'
+        : 'N/A';
 
-    await _bindingPrinter();
-    await SunmiPrinter.initPrinter();
-    await SunmiPrinter.startTransactionPrint(true);
+    await SunmiPrinter.bindingPrinter();
 
-    for (int i = 1; i <= 3; i++) {
+    for (int i = 1; i <= 4; i++) {
+      // ── Header QR ────────────────────────────────────────────────────────
       await SunmiPrinter.printText(
         'Scan Me',
-        style: SunmiStyle(
-          fontSize: SunmiFontSize.SM,
-          align: SunmiPrintAlign.CENTER,
-        ),
+        style: SunmiTextStyle(fontSize: 24, align: SunmiPrintAlign.CENTER),
       );
-      await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-      await SunmiPrinter.printQRCode(refno, size: 4);
+      await SunmiPrinter.printQRCode(
+        refno,
+        style: SunmiQrcodeStyle(qrcodeSize: 4),
+      );
       await SunmiPrinter.printText(
         'CPR-$refno',
-        style: SunmiStyle(
-          fontSize: SunmiFontSize.MD,
+        style: SunmiTextStyle(
+          fontSize: 28,
           bold: true,
           align: SunmiPrintAlign.CENTER,
         ),
       );
       await SunmiPrinter.line();
 
-      // ── Header ─────────────────────────────────────────────────────────────
-
+      // ── Body ─────────────────────────────────────────────────────────────
       await _printLine('Ref #:CPR-$refno');
       await _printLine(
         'Date:${_formatDate(cprinfo.colcprdatedelivered)} ${_formatTime(cprinfo.colcprdatedelivered)}',
@@ -130,6 +132,7 @@ class Printcprinfoprint {
       await _printLine('Request #:$requestNumber');
       await _printLine('Planter:$planterName');
       await _printLine('Location:$lotLocation');
+      await _printLine('Lot Code:${cprinfo.colcprlotcode ?? 'N/A'}');
       await _printLine('Qty Pcs:${cprinfo.colcprqty}');
       await _printLine('Qty Bags:${((cprinfo.colcprqty ?? 0) / 200).round()}');
       await _printLine('Source Planter:$sourceplanter');
@@ -141,37 +144,41 @@ class Printcprinfoprint {
       await _printLine('Cutting Date:${_formatDate(cprinfo.colcprcmdate)}');
       await _printLine('Hauling Paid:$hauling');
       await _printLine('Hauling Amount:${cprinfo.colcprhlngqty ?? 'N/A'}');
+      await _printLine('Cutting Paid:$cutterpaid');
+      await _printLine('Cutting Amount:${cprinfo.colcprcmqty ?? 'N/A'}');
+      await _printLine('Sacks Paid:$sackspaid');
+      await _printLine('Sacks Amount:${cprinfo.colcprscksqty ?? 'N/A'}');
+      await _printLine('Others Paid:$otherspaid');
+      await _printLine('Others Amount:${cprinfo.colcprothersqty ?? 'N/A'}');
       await _printLine('Received By:${cprinfo.colcprrecievedby ?? 'N/A'}');
       await _printLine('Recieve CC:$coordinator');
-      await _printLine('Source CC:$deliveredBy'); // username
+      await _printLine('Source CC:$deliveredBy');
 
-      // ── Cutting ────────────────────────────────────────────────────────────
-
-      // ── Footer ─────────────────────────────────────────────────────────────
-      // await _printLine('RePrint Count: $counter');
-      // await _printLine(
-      //   'Printed Date: ${_formatDate(cprinfo.colcprdatedelivered)} : ${_formatTime(cprinfo.colcprdatedelivered)}',
-      // );
+      // ── Footer ───────────────────────────────────────────────────────────
       await _printLine('Printed Date:$formattedPrintDate');
 
-      // ── Footer QR ──────────────────────────────────────────────────────────
+      // ── Footer QR ────────────────────────────────────────────────────────
       await SunmiPrinter.line();
       await SunmiPrinter.printText(
         'CPR-$refno',
-        style: SunmiStyle(
-          fontSize: SunmiFontSize.MD,
+        style: SunmiTextStyle(
+          fontSize: 28,
           bold: true,
           align: SunmiPrintAlign.CENTER,
         ),
       );
-      await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-      await SunmiPrinter.printQRCode(refno, size: 4);
+      await SunmiPrinter.printQRCode(
+        refno,
+        style: SunmiQrcodeStyle(qrcodeSize: 4),
+      );
       await SunmiPrinter.lineWrap(3);
-      await SunmiPrinter.line();
+      await SunmiPrinter.printText(
+        '----------- CUT HERE -----------',
+        style: SunmiTextStyle(align: SunmiPrintAlign.CENTER, bold: true),
+      );
     }
 
-    await SunmiPrinter.submitTransactionPrint();
-    await SunmiPrinter.exitTransactionPrint(true);
+    await SunmiPrinter.cutPaper();
   }
 
   Future<bool?> _bindingPrinter() async {

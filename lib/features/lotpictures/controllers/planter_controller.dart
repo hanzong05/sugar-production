@@ -12,7 +12,7 @@ class PlanterController extends ChangeNotifier {
 
   List<Planter> get filteredPlanters => _filteredPlanters;
 
-  CPRController() {
+  PlanterController() {
     loadData();
   }
 
@@ -26,7 +26,7 @@ class PlanterController extends ChangeNotifier {
       _filteredPlanters = planters;
     } catch (e) {
       debugPrint('Error loading planters: $e');
-      rethrow; // let the screen handle the SnackBar
+      rethrow;
     } finally {
       isLoading = false;
       notifyListeners();

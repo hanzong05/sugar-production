@@ -12,34 +12,36 @@ import 'package:sugar_production/core/services/cutter_service.dart';
 import 'package:sugar_production/core/services/location_service.dart';
 import 'package:sugar_production/core/services/src_planter_service.dart';
 import 'package:sugar_production/core/services/cutting_service.dart';
+import 'package:sugar_production/core/services/lotcode_service.dart';
 import 'package:sugar_production/core/services/data.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:permission_handler/permission_handler.dart';
 
 class SeedDeliveryController extends ChangeNotifier {
   final Map<String, dynamic> request;
   final Planter planter;
 
   SeedDeliveryController({required this.request, required this.planter}) {
-    _selectedDate = DateTime.now();
+    selectedDate = DateTime.now();
     _loadDropdowns();
   }
 
   // ── Text Controllers ────────────────────────────────────────────
   final qtyController = TextEditingController();
   final hlngqtyController = TextEditingController();
+  final cuttingqtyController = TextEditingController();
+  final sacksqtyController = TextEditingController();
+  final othersqtyController = TextEditingController();
   final receivedByController = TextEditingController();
+
   String? signaturePath;
   String? imagePath;
   String? seedImagePath;
   CPR? savedCpr;
+
   // ── Dates ───────────────────────────────────────────────────────
   late DateTime selectedDate;
   DateTime? cuttingDate;
-
-  DateTime get _selectedDate => selectedDate;
-  set _selectedDate(DateTime v) => selectedDate = v;
 
   // ── Media ───────────────────────────────────────────────────────
   Uint8List? signatureBytes;
@@ -57,6 +59,7 @@ class SeedDeliveryController extends ChangeNotifier {
   List<Map<String, dynamic>> sourceplanters = [];
   List<Map<String, dynamic>> coordinators = [];
   List<Map<String, dynamic>> cuttingmodes = [];
+  List<Map<String, dynamic>> lotCodes = [];
 
   // ── Selected IDs ────────────────────────────────────────────────
   int? selectedVarietyId;
@@ -65,6 +68,7 @@ class SeedDeliveryController extends ChangeNotifier {
   int? selectedSourcePlanterId;
   int? selectedCoordinatorId;
   int? selectedCuttingmodeId;
+  int? selectedLotCodeId;
 
   // ── Selected Labels ─────────────────────────────────────────────
   String selectedVarietyLabel = '';
@@ -74,60 +78,29 @@ class SeedDeliveryController extends ChangeNotifier {
   String selectedCoordinatorLabel = '';
   String selectedCuttingmodeLabel = '';
   String selectedSourcePlanterCode = '';
+  String? selectedLotCodeLabel;
 
-  // ── Hauling: 0 = not set, 1 = Yes, 2 = No ──────────────────────
+  // ── Status flags ────────────────────────────────────────────────
   int haulingStatus = 0;
+  int cuttingStatus = 0;
+  int sacksStatus = 0;
+  int othersStatus = 0;
 
   int get neededQty {
-    final requested = request['total_qty'] ?? 0;
-    final delivered = request['delivered_qty'] ?? 0;
+    final requested = int.tryParse('${request['total_qty'] ?? 0}') ?? 0;
+    final delivered = int.tryParse('${request['delivered_qty'] ?? 0}') ?? 0;
     return requested - delivered;
   }
-
-  Future<bool> _requestGalleryPermission() async {
-    if (Platform.isAndroid) {
-      final photos = await Permission.photos.request();
-      if (photos.isGranted) return true;
-
-      final storage = await Permission.storage.request();
-      return storage.isGranted;
-    }
-
-    if (Platform.isIOS) {
-      final photos = await Permission.photos.request();
-      return photos.isGranted;
-    }
-
-    return false;
-  }
-
-  // Future<void> _saveFileToGallery(
-  //   Uint8List bytes,
-  //   String prefix,
-  //   String id,
-  // ) async {
-  //   final hasPermission = await _requestGalleryPermission();
-  //   if (!hasPermission) {
-  //     throw Exception('Gallery permission denied');
-  //   }
-  //   final dir = await getApplicationDocumentsDirectory();
-  //   final path = p.join(dir.path, 'cpr_images', '${prefix}_$id.jpg');
-  //   await Directory(p.dirname(path)).create(recursive: true);
-  //   await File(path).writeAsBytes(bytes);
-
-  //   final result = await ImageGallerySaverPlus.saveFile(path);
-  //   // debugPrint('Saved to gallery: $result');
-  // }
 
   Future<String> _saveImageFile(
     Uint8List bytes,
     String prefix,
     String id,
   ) async {
-    Directory? directory;
+    Directory directory;
 
     if (Platform.isAndroid) {
-      directory = Directory('//storage/emulated/0/DCIM/CPR_IMAGES');
+      directory = Directory('/storage/emulated/0/DCIM/CPR_IMAGES');
     } else {
       directory = await getApplicationDocumentsDirectory();
     }
@@ -135,17 +108,12 @@ class SeedDeliveryController extends ChangeNotifier {
     if (!await directory.exists()) {
       await directory.create(recursive: true);
     }
-    final String filePath = p.join(directory.path, '${prefix}_$id.jpg');
+
+    final filePath = p.join(directory.path, '${prefix}_$id.jpg');
     final file = File(filePath);
-    await file.writeAsBytes(bytes);
+    await file.writeAsBytes(bytes, flush: true);
 
     return filePath;
-    // final dir = await getApplicationDocumentsDirectory();
-    // final path = p.join(dir.path, 'cpr_images', '${prefix}_$id.jpg');
-    // await Directory(p.dirname(path)).create(recursive: true);
-    // await File(path).writeAsBytes(bytes);
-    // return path;
-    // print(dir.path);
   }
 
   // ── Load Dropdowns ──────────────────────────────────────────────
@@ -159,22 +127,34 @@ class SeedDeliveryController extends ChangeNotifier {
         CoordsService.getAllCoords(),
         CuttingService.getAllCm(),
       ]);
-      varieties = results[0];
-      cutters = results[1];
-      locations = results[2];
-      sourceplanters = results[3];
-      coordinators = results[4];
-      cuttingmodes = results[5];
+
+      varieties = List<Map<String, dynamic>>.from(results[0]);
+      cutters = List<Map<String, dynamic>>.from(results[1]);
+      locations = List<Map<String, dynamic>>.from(results[2]);
+      sourceplanters = List<Map<String, dynamic>>.from(results[3]);
+      coordinators = List<Map<String, dynamic>>.from(results[4]);
+      cuttingmodes = List<Map<String, dynamic>>.from(results[5]);
     } catch (e) {
       debugPrint('Error loading dropdowns: $e');
-      rethrow;
     } finally {
       isLoadingDropdowns = false;
       notifyListeners();
     }
   }
 
-  // ── Setters (notify after each) ─────────────────────────────────
+  // ── Load Lot Codes by Source Planter ────────────────────────────
+  Future<void> _loadLotCodes(int sourcePlanterId) async {
+    try {
+      lotCodes = await LotcodeService.getLotCodesBySourcePlanter(
+        sourcePlanterId,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading lot codes: $e');
+    }
+  }
+
+  // ── Setters ─────────────────────────────────────────────────────
   void setDate(DateTime d) {
     selectedDate = d;
     notifyListeners();
@@ -206,6 +186,24 @@ class SeedDeliveryController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCuttingStatus(int value) {
+    cuttingStatus = cuttingStatus == value ? 0 : value;
+    if (cuttingStatus != 1) cuttingqtyController.clear();
+    notifyListeners();
+  }
+
+  void setOthersStatus(int value) {
+    othersStatus = othersStatus == value ? 0 : value;
+    if (othersStatus != 1) othersqtyController.clear();
+    notifyListeners();
+  }
+
+  void setSacksStatus(int value) {
+    sacksStatus = sacksStatus == value ? 0 : value;
+    if (sacksStatus != 1) sacksqtyController.clear();
+    notifyListeners();
+  }
+
   void setVariety(int? id, String label) {
     selectedVarietyId = id;
     selectedVarietyLabel = label;
@@ -228,6 +226,18 @@ class SeedDeliveryController extends ChangeNotifier {
     selectedSourcePlanterId = id;
     selectedSourcePlanterLabel = label;
     selectedSourcePlanterCode = code ?? '';
+    // Reset lot code whenever source planter changes
+    selectedLotCodeId = null;
+    selectedLotCodeLabel = null;
+    lotCodes = [];
+    notifyListeners();
+
+    if (id != null) _loadLotCodes(id);
+  }
+
+  void setLotCode(int? id, String label) {
+    selectedLotCodeId = id;
+    selectedLotCodeLabel = label;
     notifyListeners();
   }
 
@@ -244,33 +254,58 @@ class SeedDeliveryController extends ChangeNotifier {
   }
 
   // ── Submit ──────────────────────────────────────────────────────
-  /// Returns null on success, or an error string on failure.
   Future<String?> submit() async {
     final user = AuthService().currentUser;
-    final int qty = int.parse(qtyController.text);
 
-    if (qty > neededQty) return 'Quantity exceeds needed amount ($neededQty)';
+    if (qtyController.text.trim().isEmpty) {
+      return 'Quantity is required';
+    }
 
-    final int hlngqty = int.tryParse(hlngqtyController.text) ?? 0;
+    final int qty = int.tryParse(qtyController.text.trim()) ?? 0;
+    if (qty <= 0) {
+      return 'Invalid quantity';
+    }
+
+    if (qty > neededQty) {
+      return 'Quantity exceeds needed amount ($neededQty)';
+    }
+
+    if (selectedLocationId == null) return 'Please select source location';
+    if (selectedVarietyId == null) return 'Please select variety';
+    if (selectedCutterId == null) return 'Please select cutter';
+    if (selectedSourcePlanterId == null) return 'Please select source planter';
+    if (selectedCoordinatorId == null) return 'Please select coordinator';
+    if (selectedCuttingmodeId == null) return 'Please select cutting mode';
+    if (selectedLotCodeId == null) return 'Please select lot code';
+    if (receivedByController.text.trim().isEmpty) {
+      return 'Please enter received by';
+    }
+    if (signatureBytes == null) return 'Signature is required';
+    if (proofImage == null) return 'Proof image is required';
+    if (proofSeedImage == null) return 'Seed image is required';
+
+    final int hlngqty = int.tryParse(hlngqtyController.text.trim()) ?? 0;
+    final int cuttingqty = int.tryParse(cuttingqtyController.text.trim()) ?? 0;
+    final int sacksqty = int.tryParse(sacksqtyController.text.trim()) ?? 0;
+    final int othersqty = int.tryParse(othersqtyController.text.trim()) ?? 0;
+
     isSubmitting = true;
     notifyListeners();
 
     try {
       final int currentUserName = user?.usernameid ?? 0;
       final String currentUserId = user?.username ?? 'N/A';
+
       final cprCode = await CprService.generatecprCode(currentUserId);
       final String deliveryDate = selectedDate.toIso8601String();
       final String cprRef = cprCode['refno'].toString();
 
-      // ── Save images as files, store paths ──────────────────────
       signaturePath = await _saveImageFile(signatureBytes!, 'sig', cprRef);
-
       imagePath = await _saveImageFile(
         await proofImage!.readAsBytes(),
         'pic',
         cprRef,
       );
-
       seedImagePath = await _saveImageFile(
         await proofSeedImage!.readAsBytes(),
         'spd',
@@ -296,10 +331,18 @@ class SeedDeliveryController extends ChangeNotifier {
         'cuttingdate': cuttingDate?.toIso8601String() ?? '',
         'hauling_paid': haulingStatus,
         'hauling_amount': hlngqty,
+        'cutting_paid': cuttingStatus,
+        'cutting_amount': cuttingqty,
+        'sacks_paid': sacksStatus,
+        'sacks_amount': sacksqty,
+        'others_paid': othersStatus,
+        'others_amount': othersqty,
+        'lot_code': selectedLotCodeLabel ?? '',
         'traflag': 'A',
       };
-      print('CPR CODE ${cprCode['series']}');
+
       final int requestId = int.parse(request['request_id'].toString());
+
       final int cprId = await CprService.submitDelivery(
         cprData: cprData,
         requestId: requestId,
@@ -307,6 +350,7 @@ class SeedDeliveryController extends ChangeNotifier {
       );
 
       savedCpr = await CprService.getcprsById(cprId);
+
       final Map<String, String> fetchedDetails = savedCpr != null
           ? await CprService.getcprDetails(savedCpr!)
           : {};
@@ -357,18 +401,31 @@ class SeedDeliveryController extends ChangeNotifier {
   void reset() {
     qtyController.clear();
     hlngqtyController.clear();
+    cuttingqtyController.clear();
+    sacksqtyController.clear();
+    othersqtyController.clear();
     receivedByController.clear();
+
     selectedDate = DateTime.now();
     cuttingDate = null;
+
     signatureBytes = null;
     proofImage = null;
     proofSeedImage = null;
+
+    signaturePath = null;
+    imagePath = null;
+    seedImagePath = null;
+    savedCpr = null;
+
     selectedVarietyId = null;
     selectedCutterId = null;
     selectedLocationId = null;
     selectedSourcePlanterId = null;
     selectedCoordinatorId = null;
     selectedCuttingmodeId = null;
+    selectedLotCodeId = null;
+
     selectedVarietyLabel = '';
     selectedCutterLabel = '';
     selectedLocationLabel = '';
@@ -376,7 +433,15 @@ class SeedDeliveryController extends ChangeNotifier {
     selectedCoordinatorLabel = '';
     selectedCuttingmodeLabel = '';
     selectedSourcePlanterCode = '';
+    selectedLotCodeLabel = null;
+
+    lotCodes = [];
+
     haulingStatus = 0;
+    cuttingStatus = 0;
+    sacksStatus = 0;
+    othersStatus = 0;
+
     notifyListeners();
   }
 
@@ -384,6 +449,9 @@ class SeedDeliveryController extends ChangeNotifier {
   void dispose() {
     qtyController.dispose();
     hlngqtyController.dispose();
+    cuttingqtyController.dispose();
+    sacksqtyController.dispose();
+    othersqtyController.dispose();
     receivedByController.dispose();
     super.dispose();
   }

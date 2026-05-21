@@ -13,13 +13,15 @@ class FormSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Row(
       children: [
         Container(
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: AppTheme.primary.withOpacity(0.10),
+            color: AppTheme.primary.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           ),
           child: Icon(icon, size: 15, color: AppTheme.primary),
@@ -30,7 +32,7 @@ class FormSectionHeader extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: context.appColors.textSecondary,
+            color: colors.textSecondary,
             letterSpacing: 0.4,
           ),
         ),
@@ -56,7 +58,43 @@ class FormCard extends StatelessWidget {
         border: Border.all(color: context.appColors.border),
         boxShadow: AppTheme.shadowSM(dark: context.isDark),
       ),
-      child: Column(children: children),
+      child: Column(mainAxisSize: MainAxisSize.min, children: children),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Shared required label
+// ─────────────────────────────────────────────
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel({
+    required this.label,
+    required this.color,
+    this.isRequired = false,
+  });
+
+  final String label;
+  final Color color;
+  final bool isRequired;
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(fontSize: 13, color: color),
+        children: isRequired
+            ? const [
+                TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ]
+            : [],
+      ),
     );
   }
 }
@@ -93,6 +131,7 @@ class CardTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+
     return ClipRRect(
       borderRadius: BorderRadius.only(
         topLeft: isFirst ? const Radius.circular(16) : Radius.zero,
@@ -108,25 +147,13 @@ class CardTextField extends StatelessWidget {
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: colors.textPrimary,
+          color: enabled ? colors.textPrimary : colors.textHint,
         ),
         decoration: InputDecoration(
-          label: RichText(
-            text: TextSpan(
-              text: label,
-              style: TextStyle(fontSize: 13, color: colors.textSecondary),
-              children: isRequired
-                  ? [
-                      const TextSpan(
-                        text: ' *',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ]
-                  : [],
-            ),
+          label: _FieldLabel(
+            label: label,
+            color: colors.textSecondary,
+            isRequired: isRequired,
           ),
           floatingLabelStyle: const TextStyle(
             fontSize: 12,
@@ -135,7 +162,11 @@ class CardTextField extends StatelessWidget {
           ),
           prefixIcon: Padding(
             padding: const EdgeInsets.only(left: 16, right: 12),
-            child: Icon(icon, size: 18, color: colors.textSecondary),
+            child: Icon(
+              icon,
+              size: 18,
+              color: enabled ? colors.textSecondary : colors.textHint,
+            ),
           ),
           prefixIconConstraints: const BoxConstraints(
             minWidth: 0,
@@ -186,76 +217,73 @@ class CardDateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        color: colors.surface,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Icon(icon, size: 18, color: colors.textSecondary),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      text: label,
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        child: Container(
+          color: colors.surface,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: enabled ? colors.textSecondary : colors.textHint,
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _FieldLabel(
+                      label: label,
+                      color: enabled ? colors.textSecondary : colors.textHint,
+                      isRequired: isRequired,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      displayValue,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: colors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: isComplete
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        color: !enabled
+                            ? colors.textHint
+                            : isComplete
+                            ? colors.textPrimary
+                            : colors.textHint,
                       ),
-                      children: isRequired
-                          ? [
-                              const TextSpan(
-                                text: ' *',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ]
-                          : [],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    displayValue,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isComplete
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: isComplete ? colors.textPrimary : colors.textHint,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isComplete)
-              Container(
-                width: 20,
-                height: 20,
-                decoration: const BoxDecoration(
-                  color: AppTheme.primary,
-                  shape: BoxShape.circle,
+                  ],
                 ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 12,
-                ),
-              )
-            else
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 20,
-                color: colors.textSecondary,
               ),
-          ],
+              if (isComplete)
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: enabled ? AppTheme.primary : colors.textHint,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                )
+              else
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                  color: enabled ? colors.textSecondary : colors.textHint,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -290,7 +318,8 @@ class CardPickerField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final hasValue = value.isNotEmpty;
+    final hasValue = value.trim().isNotEmpty;
+
     return ClipRRect(
       borderRadius: BorderRadius.only(
         topLeft: isFirst ? const Radius.circular(16) : Radius.zero,
@@ -298,65 +327,74 @@ class CardPickerField extends StatelessWidget {
         bottomLeft: isLast ? const Radius.circular(16) : Radius.zero,
         bottomRight: isLast ? const Radius.circular(16) : Radius.zero,
       ),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        child: Container(
-          color: colors.surface,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Row(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Icon(icon, size: 18, color: colors.textSecondary),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      hasValue ? value : 'Not selected',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: hasValue
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                        color: hasValue ? colors.textPrimary : colors.textHint,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (hasValue)
-                Container(
-                  width: 20,
-                  height: 20,
-                  margin: const EdgeInsets.only(left: 8),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primary,
-                    shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          child: Container(
+            color: colors.surface,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color: enabled ? colors.textSecondary : colors.textHint,
                   ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 12,
-                  ),
-                )
-              else
-                Icon(
-                  Icons.keyboard_arrow_right_rounded,
-                  size: 20,
-                  color: colors.textSecondary,
                 ),
-            ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _FieldLabel(
+                        label: label,
+                        color: enabled ? colors.textSecondary : colors.textHint,
+                        isRequired: isRequired,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hasValue ? value : 'Not selected',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: hasValue
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          color: !enabled
+                              ? colors.textHint
+                              : hasValue
+                              ? colors.textPrimary
+                              : colors.textHint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (hasValue)
+                  Container(
+                    width: 20,
+                    height: 20,
+                    margin: const EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: enabled ? AppTheme.primary : colors.textHint,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.keyboard_arrow_right_rounded,
+                    size: 20,
+                    color: enabled ? colors.textSecondary : colors.textHint,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -406,7 +444,7 @@ class HaulingStatusField extends StatelessWidget {
             child: Icon(
               Icons.local_shipping_outlined,
               size: 18,
-              color: colors.textSecondary,
+              color: enabled ? colors.textSecondary : colors.textHint,
             ),
           ),
           Expanded(
@@ -415,7 +453,10 @@ class HaulingStatusField extends StatelessWidget {
               children: [
                 Text(
                   'Hauling Status',
-                  style: TextStyle(fontSize: 13, color: colors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: enabled ? colors.textSecondary : colors.textHint,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Container(
@@ -424,7 +465,7 @@ class HaulingStatusField extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.12),
+                    color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -487,12 +528,18 @@ class _StatusToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final isActive = current == value;
     final colors = context.appColors;
+
     return GestureDetector(
       onTap: enabled ? () => onTap(value) : null,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isActive ? activeColor : colors.surfaceAlt,
+          color: isActive
+              ? activeColor
+              : (enabled
+                    ? colors.surfaceAlt
+                    : colors.surfaceAlt.withValues(alpha: 0.6)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isActive ? activeColor : colors.border,
@@ -511,7 +558,9 @@ class _StatusToggle extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isActive ? Colors.white : colors.textSecondary,
+                color: isActive
+                    ? Colors.white
+                    : (enabled ? colors.textSecondary : colors.textHint),
               ),
             ),
           ],

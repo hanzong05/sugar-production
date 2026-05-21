@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:sugar_production/models/modplanter.dart';
+
 import 'package:sugar_production/core/theme/app_theme.dart';
 import 'package:sugar_production/core/theme/theme_extensions.dart';
-import 'package:sugar_production/layout.dart';
+
+import '../screens/seed_delivery.dart';
 
 class RequestList extends StatelessWidget {
   const RequestList({
@@ -113,9 +116,15 @@ class _RequestItemState extends State<_RequestItem>
               onTapDown: (_) => setState(() => _isPressed = true),
               onTapUp: (_) {
                 setState(() => _isPressed = false);
-                context
-                    .findAncestorStateOfType<AppLayoutState>()
-                    ?.navigateToCPRForm(widget.request, widget.planter);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SeedDeliveryForm(
+                      request: widget.request,
+                      planter: widget.planter,
+                    ),
+                  ),
+                );
               },
               onTapCancel: () => setState(() => _isPressed = false),
               child: AnimatedScale(

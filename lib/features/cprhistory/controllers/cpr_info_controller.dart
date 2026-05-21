@@ -17,6 +17,13 @@ class CprInfoController extends ChangeNotifier {
   String receivedBy = 'Loading...';
   String haulingPaid = 'Loading...';
   String haulingAmount = 'Loading...';
+  String cuttingPaid = 'Loading...';
+  String cuttingAmount = 'Loading...';
+  String sacksPaid = 'Loading...';
+  String sacksAmount = 'Loading...';
+  String othersPaid = 'Loading...';
+  String othersAmount = 'Loading...';
+  String LotCode = 'Loading...';
   String cuttingModeName = 'Loading...';
   String sourcePlanter = 'Loading...';
   String sourcePlanterCode = 'Loading...';
@@ -28,6 +35,7 @@ class CprInfoController extends ChangeNotifier {
   Future<void> loadDetails() async {
     try {
       final details = await CprService.getcprDetails(cpr);
+
       planterName = details['planterName']!;
       requestNumber = details['requestNumber']!;
       lotLocation = details['lotLocation']!;
@@ -46,6 +54,28 @@ class CprInfoController extends ChangeNotifier {
           ? 'No'
           : 'N/A';
       haulingAmount = (cpr.colcprhlngqty ?? 0).toString();
+      cuttingPaid = cpr.colcprcmstat == 1
+          ? 'Yes'
+          : cpr.colcprcmstat == 2
+          ? 'No'
+          : 'N/A';
+
+      cuttingAmount = (cpr.colcprcmqty ?? 0).toString();
+      sacksPaid = cpr.colcprscksstat == 1
+          ? 'Yes'
+          : cpr.colcprscksstat == 2
+          ? 'No'
+          : 'N/A';
+
+      sacksAmount = (cpr.colcprscksqty ?? 0).toString();
+
+      othersPaid = cpr.colcprothersstat == 1
+          ? 'Yes'
+          : cpr.colcprothersstat == 2
+          ? 'No'
+          : 'N/A';
+      othersAmount = (cpr.colcprothersqty ?? 0).toString();
+      LotCode = cpr.colcprlotcode;
     } catch (_) {
       planterName = requestNumber = lotLocation = variety = cutter =
           sourceLocation = deliveredByName = coordinatorName = receivedBy =

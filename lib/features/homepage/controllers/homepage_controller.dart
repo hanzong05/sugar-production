@@ -13,6 +13,7 @@ class HomeController extends ChangeNotifier {
   }
 
   void _onDataChanged() => loadPermissions();
+
   Future<void> loadPermissions() async {
     final userId = globals.globalusernameid;
     if (userId != null) {
@@ -20,6 +21,11 @@ class HomeController extends ChangeNotifier {
     }
     isLoading = false;
     notifyListeners();
+  }
+
+  // 👇 add this alias
+  Future<void> loadModules() async {
+    await loadPermissions();
   }
 
   bool canAccess(int moduleId) => accessibleModuleIds.contains(moduleId);

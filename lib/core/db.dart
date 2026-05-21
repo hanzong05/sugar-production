@@ -7,6 +7,12 @@ String usernameid = 'usernameid';
 String username = 'username';
 String password = 'password';
 String fullname = 'fullname';
+String issynced = 'is_synced';
+
+// String sampletable = 'sampletable';
+// String sampletableid = 'sample_tableid';
+// String message = 'message';
+
 // Planter table columns
 String planterTable = 'planter_table';
 String colPlid = 'pl_id';
@@ -14,6 +20,9 @@ String colPlcode = 'pl_code';
 String colPlname = 'pl_name';
 String colPltraflag = 'traflag';
 
+// String versionupgradetable = 'version_table';
+// String version_id = 'version_id';
+// String current_version = 'old_version';
 //lot_pictures
 String lotPicturesTable = 'lotpictures_table';
 String collpid = 'id';
@@ -39,6 +48,12 @@ String colPlsrccode = 'plsrc_code';
 String colPlsrcname = 'plsrc_name';
 String colPlsrctraflag = 'traflag';
 
+String lotcodeTable = 'lotcode_table';
+String collotcodeid = 'lotcode_id';
+String colplsrcId = 'plsrc_id';
+String collotcodename = 'lotcode_name';
+String collctraflag = 'traflag';
+
 String requestTable = 'request_table';
 String colReqid = 'request_id';
 String colReqno = 'request_no';
@@ -51,6 +66,7 @@ String colReqlothectare = 'area';
 String colReqttlqty = 'qty';
 String colReqdlqty = 'delivered_qty';
 String colReqrmqty = 'remaining_qty';
+String colforcpr = 'for_cpr';
 String colReqtraflag = 'traflag';
 
 String locationtable = 'srclocation_table';
@@ -94,6 +110,13 @@ String colcprhlngstat = 'hauling_paid';
 String colcprhlngqty = 'hauling_amount';
 String colcprcm = 'cuttingmode';
 String colcprcmdate = 'cuttingdate';
+String colcprcmstat = 'cutting_paid';
+String colcprcmqty = 'cutting_amount';
+String colcprscksstat = 'sacks_paid';
+String colcprscksqty = 'sacks_amount';
+String colcprothersstat = 'others_paid';
+String colcprothersqty = 'others_amount';
+String colcprlotcode = 'lot_code';
 String colcprtraflag = 'traflag';
 
 String notiftable = 'notif_table';
@@ -129,23 +152,39 @@ class DBHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE $userTable (
             $usernameid INTEGER PRIMARY KEY,
             $username TEXT NOT NULL UNIQUE,
             $password TEXT NOT NULL,
-            $fullname TEXT
+            $fullname TEXT,
+            $issynced NTEGER
           )
         ''');
 
+        // await db.execute('''
+        //   CREATE TABLE $sampletable (
+        //     $sampletableid INTEGER PRIMARY KEY,
+        //     $message TEXT
+        //   )
+        // ''');
         await db.execute('''
           CREATE TABLE $userpermissionstable (
                 $colpermissionid INTEGER PRIMARY KEY,
                 $colmoduleid INTEGER NOT NULL,
                 $colhasaccess INTEGER NOT NULL DEFAULT 0
             );
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $lotcodeTable (
+            $collotcodeid INTEGER PRIMARY KEY,
+            $collotcodename TEXT,
+            $colplsrcId INTEGER,
+            $collctraflag TEXT
+          )
         ''');
 
         await db.execute('''
@@ -213,6 +252,7 @@ class DBHelper {
             $colReqdlqty INTEGER DEFAULT 0,
             $colReqrmqty INTEGER NOT NULL,
             $colReqdtr TEXT NOT NULL,
+            $colforcpr INTEGER NOT NULL,
             $colReqtraflag TEXT NOT NULL,
           
             FOREIGN KEY ($colReqplcode) REFERENCES $planterTable ($colPlcode)
@@ -282,8 +322,15 @@ class DBHelper {
             $colcprhlngstat INTEGER,
             $colcprhlngqty INTEGER,
             $colcprtraflag TEXT NOT NULL,
-             $colcprcm INTEGER,
+            $colcprcm INTEGER,
             $colcprcmdate TEXT NOT NULL,
+            $colcprcmstat INTEGER,
+            $colcprcmqty INTEGER,
+            $colcprscksstat INTEGER,
+            $colcprscksqty INTEGER,
+            $colcprothersstat INTEGER,
+            $colcprothersqty INTEGER,
+            $colcprlotcode TEXT NOT NULL,
             FOREIGN KEY ($colcprplanterid) REFERENCES $planterTable ($colPlid),
             FOREIGN KEY ($colcprrequestid) REFERENCES $requestTable ($colReqid),
             FOREIGN KEY ($colcprcutter) REFERENCES $cuttertable ($colctrid),
@@ -292,6 +339,52 @@ class DBHelper {
             FOREIGN KEY ($colcprdeliveredby) REFERENCES $userTable ($usernameid)
           )
         ''');
+
+        // await db.execute('''
+        //   CREATE TABLE $versionupgradetable (
+        //     $version_id TEXT NOT NULL,
+        //     $current_version TEXT NOT NULL,
+        //   )
+        // ''');
+
+        await db.insert(planterTable, {
+          colPlid: 1,
+          colPlcode: 'PL001',
+          colPlname: 'Juan Dela Cruz',
+          colPltraflag: 'I',
+        });
+
+        // Seed 1 Request with for_cpr = 2
+        await db.insert(requestTable, {
+          colReqid: 1,
+          colReqplname: 'Juan Dela Cruz',
+          colReqplcode: 'PL001',
+          colReqno: 'REQ-0001',
+          colReqttlqty: 100,
+          colReqplid: 1,
+          colReqlothectare: '2.5',
+          colReqlotlocation: 'North Field',
+          colReqdlqty: 0,
+          colReqrmqty: 100,
+          colReqdtr: DateTime.now().toString(),
+          colforcpr: 2,
+          colReqtraflag: 'I',
+        });
+      },
+
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 6) {
+          // await db.execute('''
+          //   CREATE TABLE $sampletable (
+          //     $sampletableid  INTEGER PRIMARY KEY,
+          //     $message TEXT
+          //   )
+          // ''');
+          // await db.insert(sampletable, {
+          //   sampletableid: 1,
+          //   message: 'SAMPLE TABLE TO',
+          // });
+        }
       },
     );
   }
@@ -303,6 +396,46 @@ class DBHelper {
       user,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  static Future<int> updateSync(int id) async {
+    final db = await DBHelper.db;
+    return await db.update(
+      userTable,
+      {issynced: 1},
+      where: 'usernameid = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // static Future<Map<String, dynamic>?> getsampletablebyid(int id) async {
+  //   try {
+  //     final db = await DBHelper.db;
+  //     final result = await db.query(
+  //       sampletable,
+  //       columns: [message],
+  //       where: 'sample_tableid = ?',
+  //       whereArgs: [id],
+  //     );
+  //     return result.isNotEmpty ? result.first : null;
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
+
+  static Future<Map<String, dynamic>?> getisSyncedByid(int id) async {
+    try {
+      final db = await DBHelper.db;
+      final result = await db.query(
+        userTable,
+        columns: [issynced],
+        where: 'usernameid = ?',
+        whereArgs: [id],
+      );
+      return result.isNotEmpty ? result.first : null;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   static Future<int> insertGallery(Map<String, dynamic> gallery) async {
@@ -353,6 +486,15 @@ class DBHelper {
     return await dbClient.insert(
       lotPicturesTable,
       lp,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  static Future<int> insertLotCode(Map<String, dynamic> lc) async {
+    final dbClient = await db;
+    return await dbClient.insert(
+      lotcodeTable,
+      lc,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -451,6 +593,16 @@ class DBHelper {
     );
   }
 
+  static Future<int> updateLotcode(Map<String, dynamic> data, int id) async {
+    final db = await DBHelper.db;
+    return await db.update(
+      lotcodeTable,
+      data,
+      where: '$collotcodeid = ?',
+      whereArgs: [id],
+    );
+  }
+
   static Future<int> updateGallery(Map<String, dynamic> data, int id) async {
     final db = await DBHelper.db;
     return await db.update(
@@ -541,10 +693,19 @@ class DBHelper {
     );
   }
 
+  static Future<int> deleteLotcode(int id) async {
+    final db = await DBHelper.db;
+    return await db.delete(
+      lotcodeTable,
+      where: '$collotcodeid = ?',
+      whereArgs: [id],
+    );
+  }
+
   static Future<int> deletLotPictures(int id) async {
     final db = await DBHelper.db;
     return await db.delete(
-      requestTable,
+      lotPicturesTable,
       where: '$collpid = ?',
       whereArgs: [id],
     );
@@ -614,23 +775,5 @@ class DBHelper {
       whereArgs: [user],
     );
     return result.isNotEmpty ? result.first : null;
-  }
-
-  static Future<void> clearAllData() async {
-    final dbClient = await db;
-    await dbClient.delete(cprtable);
-    await dbClient.delete(requestTable);
-    await dbClient.delete(planterTable);
-    await dbClient.delete(locationtable);
-    await dbClient.delete(varietytable);
-    await dbClient.delete(cuttertable);
-    await dbClient.delete(cuttingmodetable);
-  }
-
-  static Future<void> deleteDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'app.db');
-    await databaseFactory.deleteDatabase(path);
-    _db = null;
   }
 }

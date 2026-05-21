@@ -44,6 +44,12 @@ class _PlanterReqScreenState extends State<PlanterReqScreen> {
     );
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('LOT PICTURES'),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+      ),
+
       backgroundColor: AppTheme.primary,
       body: Stack(
         children: [

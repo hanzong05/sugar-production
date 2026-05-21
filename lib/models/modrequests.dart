@@ -10,6 +10,7 @@ class Requests {
   final int _colReqrmqty;
   final int _colReqdlqty;
   final int _colReqplId;
+  final int _colForCpr;
   final String _traflag;
 
   // String colTktcount = 'tktcount';
@@ -29,6 +30,7 @@ class Requests {
     this._colReqrmqty,
     this._colReqdlqty,
     this._colReqplId,
+    this._colForCpr,
     this._traflag,
   );
 
@@ -43,6 +45,7 @@ class Requests {
   String get colReqdtr => _colReqdtr;
   int get colReqplId => _colReqplId;
   int get colReqno => _colReqno;
+  int get colforcpr => _colForCpr;
   String get traflag => _traflag;
 
   Map<String, dynamic> toMap() {
@@ -58,6 +61,7 @@ class Requests {
     map['request_date'] = _colReqdtr;
     map['request_no'] = _colReqno;
     map['planter_id'] = _colReqplId;
+    map['for_cpr'] = _colForCpr;
     map['traflag'] = _traflag;
 
     return map;
@@ -75,5 +79,6 @@ class Requests {
       _colReqdtr = map['request_date'],
       _colReqno = map['request_no'],
       _colReqplId = map['planter_id'],
+      _colForCpr = map['for_cpr'],
       _traflag = map['traflag'];
 }

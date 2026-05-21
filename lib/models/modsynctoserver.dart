@@ -169,6 +169,7 @@ class DtRequestjson {
     required this.remaining_qty,
     required this.delivered_qty,
     required this.plid,
+    required this.forcpr,
     required this.traflag,
   });
   final String request_id;
@@ -182,6 +183,7 @@ class DtRequestjson {
   final String delivered_qty;
   final String remaining_qty;
   final String plid;
+  final String forcpr;
   final String traflag;
   factory DtRequestjson.fromJson(Map<String, dynamic> json) => DtRequestjson(
     request_id: json["request_id"],
@@ -195,6 +197,7 @@ class DtRequestjson {
     remaining_qty: json["remaining_qty"],
     delivered_qty: json["delivered_qty"],
     plid: json["plid"],
+    forcpr: json["forcpr"],
     traflag: json["traflag"],
   );
   Map<String, dynamic> toJson() => {
@@ -209,6 +212,7 @@ class DtRequestjson {
     "delivered_qty": delivered_qty,
     "remaining_qty": remaining_qty,
     "planter_id": plid,
+    "for_cpr": forcpr,
     "traflag": traflag,
   };
 }
@@ -481,6 +485,13 @@ class Dtcprjson {
     required this.hauling_amount,
     required this.cuttingmode,
     required this.cuttingdate,
+    required this.cutting_paid,
+    required this.cutting_amount,
+    required this.sacks_paid,
+    required this.sacks_amount,
+    required this.others_paid,
+    required this.others_amount,
+    required this.lot_code,
   });
   final String id;
   final String cpr_id;
@@ -503,6 +514,13 @@ class Dtcprjson {
   final String hauling_amount;
   final String cuttingmode;
   final String cuttingdate;
+  final String cutting_paid;
+  final String cutting_amount;
+  final String sacks_paid;
+  final String sacks_amount;
+  final String others_paid;
+  final String others_amount;
+  final String lot_code;
 
   factory Dtcprjson.fromJson(Map<String, dynamic> json) => Dtcprjson(
     id: json["id"] ?? '0',
@@ -526,6 +544,13 @@ class Dtcprjson {
     hauling_amount: json["hauling_amount"] ?? '0',
     cuttingmode: json["cuttingmode"] ?? '0',
     cuttingdate: json["cuttingdate"] ?? '0',
+    cutting_paid: json["cutting_paid"] ?? '0',
+    cutting_amount: json["cutting_amount"] ?? '0',
+    sacks_paid: json["sacks_paid"] ?? '0',
+    sacks_amount: json["sacks_amount"] ?? '0',
+    others_paid: json["others_paid"] ?? '0',
+    others_amount: json["others_amount"] ?? '0',
+    lot_code: json["source_lot_code"] ?? '',
   );
   Map<String, dynamic> toJson() => {
     "cpr_id": cpr_id,
@@ -547,6 +572,13 @@ class Dtcprjson {
     "hauling_amount": hauling_amount,
     "cuttingmode": cuttingmode,
     "cuttingdate": cuttingdate,
+    "cutting_paid": cutting_paid,
+    "cutting_amount": cutting_amount,
+    "sacks_paid": sacks_paid,
+    "sacks_amount": sacks_amount,
+    "others_paid": others_paid,
+    "others_amount": others_amount,
+    "lot_code": lot_code,
   };
 }
 
@@ -584,6 +616,51 @@ class Dtnotif {
     "date_time": datetime,
     "title": title,
     "body": body,
+  };
+}
+
+///--------------------------------------
+
+LotCodejson LotCodeFromJson(String str) =>
+    LotCodejson.fromJson(json.decode(str));
+String LotCodeToJson(LotCodejson data) => json.encode(data.toJson());
+
+class LotCodejson {
+  LotCodejson({required this.data});
+  final List<Dtlotcode> data;
+  factory LotCodejson.fromJson(Map<String, dynamic> json) => LotCodejson(
+    data: List<Dtlotcode>.from(
+      json["lotcodes"].map((x) => Dtlotcode.fromJson(x)),
+    ),
+  );
+  Map<String, dynamic> toJson() => {
+    "lotcodes": List<dynamic>.from(data.map((x) => x.toJson())),
+  };
+}
+
+class Dtlotcode {
+  Dtlotcode({
+    required this.lotcodeid,
+    required this.lotcodename,
+    required this.plantersrcId,
+    required this.traflag,
+  });
+
+  final String lotcodeid;
+  final String lotcodename;
+  final String plantersrcId;
+  final String traflag;
+  factory Dtlotcode.fromJson(Map<String, dynamic> json) => Dtlotcode(
+    lotcodeid: json["id"],
+    lotcodename: json["description"],
+    plantersrcId: json["pl_id"],
+    traflag: json["traflag"],
+  );
+  Map<String, dynamic> toJson() => {
+    "lotcode_id": lotcodeid,
+    "lotcode_name": lotcodename,
+    "plsrc_id": plantersrcId,
+    "traflag": traflag,
   };
 }
 

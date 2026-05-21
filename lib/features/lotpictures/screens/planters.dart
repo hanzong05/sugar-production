@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sugar_production/features/cprdelivery/controllers/planter_controller.dart';
+import 'package:sugar_production/features/lotpictures/controllers/planter_controller.dart';
 import 'package:sugar_production/widgets/search_bar.dart';
 import 'package:sugar_production/widgets/empty_state.dart';
 import 'package:sugar_production/core/theme/app_theme.dart';
@@ -67,6 +67,12 @@ class PlanterScreenState extends State<PlanterScreen> {
     );
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('LOT PICTURES'),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+      ),
+
       body: Stack(
         children: [
           Container(height: 30, color: AppTheme.primary),

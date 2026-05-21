@@ -23,6 +23,16 @@ class CprService {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> getCpr() async {
+    try {
+      final db = await DBHelper.db;
+      return await db.query(cprtable);
+    } catch (e) {
+      print('Error getting planters: $e');
+      rethrow;
+    }
+  }
+
   static Future<int> insertCPR(Map<String, dynamic> cpr) async {
     try {
       return await DBHelper.insertCPR(cpr);

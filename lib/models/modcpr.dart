@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 class CPR {
   final int _colcprid;
   final String _colccprrefno;
@@ -21,6 +19,13 @@ class CPR {
   final int? _colcprcm;
   final String _colcprcmdate;
   final String _traflag;
+  final int? _colcprcmstat;
+  final int? _colcprcmqty;
+  final int? _colcprscksstat;
+  final int? _colcprscksqty;
+  final int? _colcprothersstat;
+  final int? _colcprothersqty;
+  final String _colcprlotcode;
 
   CPR(
     this._colcprid,
@@ -43,6 +48,13 @@ class CPR {
     this._colcprhlngqty,
     this._colcprcm,
     this._colcprcmdate,
+    this._colcprcmstat,
+    this._colcprcmqty,
+    this._colcprscksstat,
+    this._colcprscksqty,
+    this._colcprothersstat,
+    this._colcprothersqty,
+    this._colcprlotcode,
   );
 
   // Getters
@@ -66,7 +78,13 @@ class CPR {
   int? get colcprhlngqty => _colcprhlngqty;
   int? get colcprcm => _colcprcm;
   String get colcprcmdate => _colcprcmdate;
-
+  int? get colcprcmstat => _colcprcmstat;
+  int? get colcprcmqty => _colcprcmqty;
+  int? get colcprscksstat => _colcprscksstat;
+  int? get colcprscksqty => _colcprscksqty;
+  int? get colcprothersstat => _colcprothersstat;
+  int? get colcprothersqty => _colcprothersqty;
+  String get colcprlotcode => _colcprlotcode;
   Map<String, dynamic> toMap() {
     return {
       'cpr_id': _colcprid,
@@ -89,6 +107,13 @@ class CPR {
       'hauling_amount': _colcprhlngqty,
       'cuttingmode': _colcprcm,
       'cuttingdate': _colcprcmdate,
+      'cutting_paid': _colcprcmstat,
+      'cutting_amount': _colcprcmqty,
+      'sacks_paid': _colcprscksstat,
+      'sacks_amount': _colcprscksqty,
+      'others_paid': _colcprothersstat,
+      'others_amount': _colcprothersqty,
+      'lot_code': _colcprlotcode,
     };
   }
 
@@ -112,5 +137,12 @@ class CPR {
       _colcprhlngstat = map['hauling_paid'],
       _colcprhlngqty = map['hauling_amount'],
       _colcprcm = map['cuttingmode'],
-      _colcprcmdate = map['cuttingdate'];
+      _colcprcmdate = map['cuttingdate'],
+      _colcprcmstat = map['cutting_paid'],
+      _colcprcmqty = map['cutting_amount'],
+      _colcprscksstat = map['sacks_paid'],
+      _colcprscksqty = map['sacks_amount'],
+      _colcprothersstat = map['others_paid'],
+      _colcprothersqty = map['others_amount'],
+      _colcprlotcode = map['lot_code'];
 }

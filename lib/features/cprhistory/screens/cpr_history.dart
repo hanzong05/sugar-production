@@ -47,6 +47,12 @@ class _CprsHistoryState extends State<CprsHistory> {
     );
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('CPR HISTORY'),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+      ),
+
       backgroundColor: AppTheme.primary,
       body: Stack(
         children: [

@@ -94,6 +94,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('CPR INFO'),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+      ),
       backgroundColor: colors.background,
       body: _ctrl.isLoading
           ? const Center(

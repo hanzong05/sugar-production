@@ -26,9 +26,8 @@ class PlanterReqController extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      final requests = await _requestService.getRequestsByPlanterWithDetails(
-        plcode,
-      );
+      final requests = await _requestService
+          .getRequestsByPlanterWithDetailsForCpr(plcode);
       _requests = requests;
       _filteredRequests = List.from(requests);
     } catch (e) {

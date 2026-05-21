@@ -206,6 +206,10 @@ class _LandPrepVerificationFormState extends State<LandPrepVerificationForm> {
 
     return Scaffold(
       backgroundColor: colors.background,
+      appBar: AppBar(
+        title: const Text("Land Preparation Verification"),
+        backgroundColor: AppTheme.primary,
+      ),
       body: Stack(
         children: [
           Container(height: 30, color: AppTheme.primary),

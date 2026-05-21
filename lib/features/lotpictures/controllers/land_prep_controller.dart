@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sugar_production/models/modplanter.dart';
 import 'package:sugar_production/core/services/lotpicture_service.dart';
-import 'package:sugar_production/core/services/data.dart';
+import 'package:sugar_production/core/services/data.dart' show LotPicNotifier;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'dart:typed_data'; // ← add this
@@ -201,7 +201,7 @@ class LandPrepController extends ChangeNotifier {
       };
 
       await LotpictureService.upsertLotPicture(requestId, map);
-      DataNotifier.instance.notify();
+      LotPicNotifier.instance.notify();
       return null;
     } catch (e) {
       debugPrint('[LP] Submit error: $e');

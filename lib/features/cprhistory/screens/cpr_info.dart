@@ -66,7 +66,7 @@ class _CprInfoState extends State<CprInfo> {
 
   void _onPrint() {
     try {
-      _ctrl.print();
+      // _ctrl.print();
       _showSnackBar(
         'Printing ${widget.cpr.colccprrefno}...',
         isError: false,
@@ -111,6 +111,12 @@ class _CprInfoState extends State<CprInfo> {
     final cpr = widget.cpr;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('CPR INFO'),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+      ),
+
       backgroundColor: colors.background,
       body: Stack(
         children: [
@@ -239,6 +245,36 @@ class _CprInfoState extends State<CprInfo> {
                           value: _ctrl.haulingAmount,
                         ),
                         InfoRow(
+                          icon: Icons.local_shipping_outlined,
+                          label: 'Cutting Paid',
+                          value: _ctrl.cuttingPaid,
+                        ),
+                        InfoRow(
+                          icon: Icons.monetization_on_outlined,
+                          label: 'Cutting Amount',
+                          value: _ctrl.cuttingAmount,
+                        ),
+                        InfoRow(
+                          icon: Icons.local_shipping_outlined,
+                          label: 'Sacks Paid',
+                          value: _ctrl.sacksPaid,
+                        ),
+                        InfoRow(
+                          icon: Icons.monetization_on_outlined,
+                          label: 'Sacks Amount',
+                          value: _ctrl.sacksAmount,
+                        ),
+                        InfoRow(
+                          icon: Icons.local_shipping_outlined,
+                          label: 'Others Paid',
+                          value: _ctrl.othersPaid,
+                        ),
+                        InfoRow(
+                          icon: Icons.monetization_on_outlined,
+                          label: 'Others Amount',
+                          value: _ctrl.othersAmount,
+                        ),
+                        InfoRow(
                           icon: Icons.content_cut_rounded,
                           label: 'Cutting Mode',
                           value: _ctrl.cuttingModeName,
@@ -247,6 +283,11 @@ class _CprInfoState extends State<CprInfo> {
                           icon: Icons.calendar_month_rounded,
                           label: 'Cutting Date',
                           value: _ctrl.formatDate(cpr.colcprcmdate),
+                        ),
+                        InfoRow(
+                          icon: Icons.monetization_on_outlined,
+                          label: 'Lot COde',
+                          value: _ctrl.LotCode,
                         ),
                       ],
                     ),
