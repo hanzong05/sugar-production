@@ -132,7 +132,7 @@ class Printcprinfoprint {
       await _printLine('Request #:$requestNumber');
       await _printLine('Planter:$planterName');
       await _printLine('Location:$lotLocation');
-      await _printLine('Lot Code:${cprinfo.colcprlotcode ?? 'N/A'}');
+      await _printLine('Lot Code:${cprinfo.colcprlotcode}');
       await _printLine('Qty Pcs:${cprinfo.colcprqty}');
       await _printLine('Qty Bags:${((cprinfo.colcprqty ?? 0) / 200).round()}');
       await _printLine('Source Planter:$sourceplanter');
@@ -181,7 +181,4 @@ class Printcprinfoprint {
     await SunmiPrinter.cutPaper();
   }
 
-  Future<bool?> _bindingPrinter() async {
-    return await SunmiPrinter.bindingPrinter();
-  }
 }
