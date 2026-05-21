@@ -37,12 +37,10 @@ dependencies:
   dio: ^5.7.0
   open_filex: ^4.5.0
   shared_preferences: ^2.2.2
-  firebase_core: ^4.4.0
   flutter_background_service: ^5.0.10
   flutter_background_service_android: ^6.2.4
   flutter_local_notifications: ^18.0.1
   cupertino_icons: ^1.0.8
-  firebase_messaging: ^16.1.1
   connectivity_plus: ^6.0.3
   image_picker: ^1.0.7
   sunmi_printer_plus: ^4.1.1
