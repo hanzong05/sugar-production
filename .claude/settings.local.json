@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"C:\\\\Users\\\\Hanz\\\\Desktop\\\\v2\\\\sugar_production\\\\lib\\\\core\\\\services\\\\sync_service copy.dart\")",
+      "Bash(del \"C:\\\\Users\\\\Hanz\\\\Desktop\\\\v2\\\\sugar_production\\\\lib\\\\core\\\\services\\\\sync_service copy 2.dart\")"
+    ]
+  }
+}
