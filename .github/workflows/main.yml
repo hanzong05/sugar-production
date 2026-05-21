@@ -1,20 +1,21 @@
 name: MAIN
 on:
   pull_request:
-    brangches:
+    branches:
       - main
 jobs:
   flutter_test:
     name: Run flutter test and analyze
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          java-version: "12.x"
-      - uses: subosotp/flutter-action@v1
+          distribution: "temurin"
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
         with:
           channel: "stable"
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter tests
+      - run: flutter test
